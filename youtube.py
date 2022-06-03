@@ -1,11 +1,12 @@
 from json import dumps
 import requests
 from ytmusicapi import YTMusic
+from secrets import channel_id, spotify_token, spotify_id
 
-class CreatePlaylist:
+class UsersPlaylist:
 
     def __init__(self):
-        self.yt_playlist = YTMusic.get_user_playlists()
+        self.yt_playlist = YTMusic.get_user_playlists(channel_id)
         self.migrate_playlists = {}
 
     #Gets all playlist on youtube music along with song and information in text
@@ -29,19 +30,20 @@ class CreatePlaylist:
             self.create_playlist(dic['name'], dic['description'])
             self.add_songs_to_playlist(dic['spotify_page'])
 
+    #create playlist in spotify
     def create_playlist(self, name, description):
         request_body = dumps({
             "name": name,
             "description": description,
             "public": True
         })
-        query = "https://api.spotify.com/v1/users/{}/playlists".format()
+        query = "https://api.spotify.com/v1/users/{}/playlists".format(spotify_id)
         response = requests.post(
             query,
             data = request_body,
             headers = {
                 "Content-Type": "application/json",
-                "Authorization": "Bearer {}".format(),
+                "Authorization": "Bearer {}".format(spotify_token),
             })
         response_json = response.json()
         return response_json["id"]
@@ -55,13 +57,14 @@ class CreatePlaylist:
             query,
             headers = {
                 "Content-Type": "application/json",
-                "Authorization": "Bearer {}".format(),
+                "Authorization": "Bearer {}".format(spotify_token),
             }
         )
         response_json = response.json()
         songs = response_json["tracks"]["items"]
         return songs[0]["url"]
 
+    #add all songs to a spotify playlist
     def add_songs_to_playlist(self, tracks):
         song_url = []
         for song in tracks:
@@ -74,11 +77,12 @@ class CreatePlaylist:
             data = request_data,
             headers = {
                 "Content-Type": "application/json",
-                "Authorization": "Bearer {}".format(),
+                "Authorization": "Bearer {}".format(spotify_token),
             }            
         )
         return response.json()
 
 if __name__ == '__main__':
-    pass
-
+    playlist_transfer = UsersPlaylist()
+    playlist_transfer.get_playlist()
+    playlist_transfer.transfer_playlist()
